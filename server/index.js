@@ -91,8 +91,12 @@ app.use('/api/coupons', couponRoutes);
 // Serve static files from the 'uploads' directory
 app.use('/uploads', express.static(path.join(__dirname, '/uploads')));
 
+app.get('/api', (req, res) => {
+    res.send('Sweet Delights API is running at /api');
+});
+
 app.get('/', (req, res) => {
-    res.send('Sweet Delights API is running');
+    res.send('Sweet Delights API is running at /');
 });
 
 // Global Error Handler

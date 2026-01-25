@@ -1,0 +1,71 @@
+/* Custom fonts import */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0');
+
+:root {
+  --text-muted: #8D6E63;
+}
+
+.dark {
+  --text-muted: #FFF8E1;
+}
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-background-light dark:bg-background-dark text-text-primary-light dark:text-text-primary-dark font-sans transition-colors duration-300;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-serif font-bold text-text-primary-light dark:text-text-primary-dark;
+  }
+
+  ::selection {
+    @apply bg-accent text-white;
+  }
+}
+
+@layer components {
+
+  /* Primary Button: Gold */
+  .input-field {
+    @apply w-full rounded-lg border-gray-200 dark:border-gray-700 bg-white/50 dark:bg-black/20 p-3 text-sm text-text-primary-light dark:text-text-primary-dark focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all outline-none;
+  }
+
+  .btn-primary {
+    @apply px-6 py-3 bg-accent text-text-primary-light font-bold rounded-full transition-all duration-300 shadow-lg hover:shadow-cherry-glow hover:bg-accent-hover active:scale-95 flex items-center justify-center gap-2;
+  }
+
+  /* Secondary Button: Mocha */
+  .btn-secondary {
+    @apply px-6 py-3 bg-secondary dark:bg-secondary-dark text-primary font-bold rounded-full transition-all duration-300 shadow-lg hover:shadow-xl hover:bg-primary-hover active:scale-95 flex items-center justify-center gap-2;
+  }
+
+  .btn-outline {
+    @apply px-6 py-3 border-2 border-accent text-accent font-bold rounded-full transition-all duration-300 hover:bg-accent hover:text-text-primary-light;
+  }
+
+  .glass {
+    @apply bg-surface-light/80 dark:bg-surface-dark/80 backdrop-blur-md border border-white/20 dark:border-white/5 shadow-xl;
+  }
+
+  .card-hover {
+    @apply transition-all duration-300 hover:-translate-y-2 hover:shadow-cherry-glow;
+  }
+}
+
+.material-symbols-outlined {
+  font-variation-settings:
+    'FILL' 0,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 24
+}

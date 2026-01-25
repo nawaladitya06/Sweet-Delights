@@ -17,7 +17,7 @@ import Profile from './pages/Profile';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 
-import { GoogleOAuthProvider } from '@react-oauth/google';
+
 import Products from './pages/Products';
 import ProductDetails from './pages/ProductDetails';
 import Welcome from './pages/Welcome';
@@ -31,12 +31,8 @@ import AIChatbot from './components/AIChatbot';
 import ScrollToTop from './components/ScrollToTop';
 
 function App() {
-  // Replace with your actual Google Client ID
-  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com";
-
   return (
-    <GoogleOAuthProvider clientId={googleClientId}>
-      <ThemeProvider>
+    <ThemeProvider>
         <ToastProvider />
         <AuthProvider>
           <CartProvider>
@@ -81,7 +77,6 @@ function App() {
           </CartProvider>
         </AuthProvider>
       </ThemeProvider>
-    </GoogleOAuthProvider>
   );
 }
 

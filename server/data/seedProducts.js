@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const Product = require('../models/Product');
 
-dotenv.config({ path: '../.env' }); // Adjust path to .env
+dotenv.config(); // Use default .env in current directory (server/)
 
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/sweetdelights')
     .then(() => console.log('MongoDB Connected for Seeding'))

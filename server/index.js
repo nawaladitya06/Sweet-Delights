@@ -138,7 +138,7 @@ app.use('/contact', contactRoutes);
 app.use('/coupons', couponRoutes);
 
 // Custom 404 for API routes to debug path issues
-app.use('/api/*', (req, res) => {
+app.use('/api', (req, res) => {
     console.log(`404 at API: ${req.method} ${req.originalUrl}`);
     res.status(404).json({
         message: 'Endpoint not found in Sweet Delights API',

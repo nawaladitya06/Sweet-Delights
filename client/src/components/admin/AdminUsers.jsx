@@ -5,8 +5,10 @@ import axios from 'axios';
 import { API_URL } from '../../config';
 
 const AdminUsers = () => {
+    const { user: currentUser } = React.useContext(AuthContext);
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [isUpdating, setIsUpdating] = useState(false);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [newUser, setNewUser] = useState({
         name: '',
@@ -48,10 +50,31 @@ const AdminUsers = () => {
             await axios.put(`${API_URL}/api/users/${id}`, { role: newRole }, config);
 
             setUsers(users.map(user => user._id === id ? { ...user, role: newRole } : user));
-            toast.success(`User role updated to ${newRole}`);
+            toast.success(`User role updated to ${newRole === 'admin' ? 'Baker' : newRole === 'superadmin' ? 'Owner' : 'Customer'}`);
         } catch (error) {
             console.error("Error updating role:", error);
             toast.error("Failed to update user role");
+        }
+    };
+
+    const handleStatusUpdate = async (id, status) => {
+        setIsUpdating(true);
+        try {
+            const token = localStorage.getItem('token');
+            const config = {
+                headers: {
+                    Authorization: `Bearer ${token}`
+                }
+            };
+            await axios.put(`${API_URL}/api/auth/status/${id}`, { status }, config);
+
+            setUsers(users.map(u => u._id === id ? { ...u, status } : u));
+            toast.success(`User ${status === 'approved' ? 'approved' : 'declined'} successfully`);
+        } catch (error) {
+            console.error("Error updating status:", error);
+            toast.error(error.response?.data?.message || "Failed to update status");
+        } finally {
+            setIsUpdating(false);
         }
     };
 
@@ -96,12 +119,15 @@ const AdminUsers = () => {
         }
     };
 
+    const pendingAdmins = users.filter(u => u.role === 'admin' && u.status === 'pending');
+    const approvedUsers = users.filter(u => u.role !== 'admin' || u.status === 'approved' || u.status === 'active' || !u.status);
+
     if (loading) {
         return <div className="p-8 text-center text-text-muted">Loading users...</div>;
     }
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-8">
             <div className="flex items-center justify-between">
                 <div>
                     <h2 className="text-2xl font-bold font-serif text-primary dark:text-accent">User Management</h2>
@@ -116,26 +142,77 @@ const AdminUsers = () => {
                 </button>
             </div>
 
+            {/* Pending Approvals Section (Only for Superadmin) */}
+            {currentUser?.role === 'superadmin' && pendingAdmins.length > 0 && (
+                <div className="space-y-4">
+                    <h3 className="text-lg font-bold text-accent flex items-center gap-2">
+                        <span className="material-symbols-outlined">pending_actions</span>
+                        Pending Baker Approvals
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {pendingAdmins.map((admin) => (
+                            <motion.div
+                                key={admin._id}
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                className="glass p-6 rounded-2xl border border-accent/20 flex flex-col gap-4 relative overflow-hidden"
+                            >
+                                <div className="absolute top-0 right-0 p-2 bg-accent/10 rounded-bl-xl">
+                                    <span className="text-[10px] font-bold text-accent uppercase">Pending</span>
+                                </div>
+                                <div className="flex items-center gap-4">
+                                    <div className="w-12 h-12 rounded-full bg-accent/20 flex items-center justify-center text-accent font-bold text-xl">
+                                        {admin.name.charAt(0)}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="font-bold text-text-primary-light dark:text-text-primary-dark truncate">{admin.name}</p>
+                                        <p className="text-sm text-text-muted truncate">{admin.email}</p>
+                                    </div>
+                                </div>
+                                <div className="flex gap-3">
+                                    <button
+                                        disabled={isUpdating}
+                                        onClick={() => handleStatusUpdate(admin._id, 'approved')}
+                                        className="flex-1 py-2 rounded-xl bg-accent text-white font-bold text-sm hover:shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                                    >
+                                        <span className="material-symbols-outlined text-sm">check_circle</span>
+                                        Approve
+                                    </button>
+                                    <button
+                                        disabled={isUpdating}
+                                        onClick={() => handleStatusUpdate(admin._id, 'declined')}
+                                        className="flex-1 py-2 rounded-xl border border-error text-error font-bold text-sm hover:bg-error/10 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                                    >
+                                        <span className="material-symbols-outlined text-sm">cancel</span>
+                                        Decline
+                                    </button>
+                                </div>
+                            </motion.div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
             <div className="glass rounded-xl overflow-hidden border border-accent/10">
                 <div className="overflow-x-auto">
-                    {users.length === 0 ? (
+                    {approvedUsers.length === 0 ? (
                         <div className="p-8 text-center text-text-muted">
                             <span className="material-symbols-outlined text-4xl mb-2 opacity-50">group_off</span>
-                            <p>No registered users found.</p>
+                            <p>No active users found.</p>
                         </div>
                     ) : (
                         <table className="w-full text-left border-collapse">
                             <thead>
                                 <tr className="bg-accent/5 border-b border-accent/10">
-                                    <th className="p-4 text-sm font-bold text-primary dark:text-secondary-dark">User</th>
-                                    <th className="p-4 text-sm font-bold text-primary dark:text-secondary-dark">Email</th>
-                                    <th className="p-4 text-sm font-bold text-primary dark:text-secondary-dark">Role</th>
-                                    <th className="p-4 text-sm font-bold text-primary dark:text-secondary-dark">Joined</th>
-                                    <th className="p-4 text-sm font-bold text-primary dark:text-secondary-dark">Actions</th>
+                                    <th className="p-4 text-sm font-bold text-primary dark:text-secondary-dark font-display">User</th>
+                                    <th className="p-4 text-sm font-bold text-primary dark:text-secondary-dark font-display">Email</th>
+                                    <th className="p-4 text-sm font-bold text-primary dark:text-secondary-dark font-display">Role</th>
+                                    <th className="p-4 text-sm font-bold text-primary dark:text-secondary-dark font-display">Status</th>
+                                    <th className="p-4 text-sm font-bold text-primary dark:text-secondary-dark font-display">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-accent/10">
-                                {users.map((user, index) => (
+                                {approvedUsers.map((user, index) => (
                                     <motion.tr
                                         key={user._id}
                                         initial={{ opacity: 0, y: 10 }}
@@ -157,13 +234,19 @@ const AdminUsers = () => {
                                                 value={user.role}
                                                 onChange={(e) => handleRoleChange(user._id, e.target.value)}
                                             >
-                                                <option value="user" className="bg-surface-light dark:bg-surface-dark">User</option>
-                                                <option value="admin" className="bg-surface-light dark:bg-surface-dark">Admin</option>
-                                                <option value="superadmin" className="bg-surface-light dark:bg-surface-dark">Super Admin</option>
+                                                <option value="user" className="bg-surface-light dark:bg-surface-dark">Customer</option>
+                                                <option value="admin" className="bg-surface-light dark:bg-surface-dark">Baker</option>
+                                                <option value="superadmin" className="bg-surface-light dark:bg-surface-dark">Owner</option>
                                             </select>
                                         </td>
-                                        <td className="p-4 text-sm text-text-muted">{new Date(user.createdAt).toLocaleDateString()}</td>
                                         <td className="p-4">
+                                            <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${user.status === 'approved' || user.status === 'active' || !user.status ? 'bg-success/10 text-success' :
+                                                    user.status === 'pending' ? 'bg-accent/10 text-accent' : 'bg-error/10 text-error'
+                                                }`}>
+                                                {user.status || 'active'}
+                                            </span>
+                                        </td>
+                                        <td className="p-4 flex gap-2">
                                             <button
                                                 onClick={() => handleDeleteUser(user._id)}
                                                 className="text-error hover:bg-error/10 p-2 rounded-lg transition-colors"
@@ -234,9 +317,9 @@ const AdminUsers = () => {
                                         value={newUser.role}
                                         onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
                                     >
-                                        <option value="user">User</option>
-                                        <option value="admin">Admin</option>
-                                        <option value="superadmin">Super Admin</option>
+                                        <option value="user">Customer</option>
+                                        <option value="admin">Baker</option>
+                                        <option value="superadmin">Owner</option>
                                     </select>
                                 </div>
                                 <div className="pt-4 flex gap-3 justify-end">
@@ -262,5 +345,7 @@ const AdminUsers = () => {
         </div>
     );
 };
+
+import AuthContext from '../../context/AuthContext';
 
 export default AdminUsers;

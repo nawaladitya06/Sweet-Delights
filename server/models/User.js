@@ -42,6 +42,13 @@ const userSchema = new mongoose.Schema({
     avatar: {
         type: String,
         default: null
+    },
+    status: {
+        type: String,
+        enum: ['pending', 'approved', 'declined', 'active'],
+        default: function () {
+            return this.role === 'admin' ? 'pending' : 'active';
+        }
     }
 });
 

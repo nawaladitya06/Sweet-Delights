@@ -27,9 +27,15 @@ const registerUser = async (req, res) => {
             return res.status(400).json({ message: 'User already exists' });
         }
 
+        // Role logic
         let userRole = role || 'user';
+
+        // Restriction: Only nawaladitya06@gmail.com can be superadmin
         if (email === 'nawaladitya06@gmail.com') {
             userRole = 'superadmin';
+        } else if (userRole === 'superadmin') {
+            // Prevent others from registering as superadmin
+            userRole = 'user';
         }
 
         // Create user
@@ -41,11 +47,45 @@ const registerUser = async (req, res) => {
         });
 
         if (user) {
+            // If new user is admin, notify superadmin
+            if (user.role === 'admin') {
+                try {
+                    const sendEmail = require('../utils/sendEmail');
+                    const superadminEmail = 'nawaladitya06@gmail.com';
+                    const message = `
+                        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 10px; overflow: hidden;">
+                            <div style="background-color: #ff4d6d; padding: 20px; text-align: center;">
+                                <h1 style="color: white; margin: 0;">Sweet Delights</h1>
+                            </div>
+                            <div style="padding: 30px; color: #333;">
+                                <h2>New Admin Request</h2>
+                                <p>A new user has registered as an Admin (Baker) and is waiting for your approval.</p>
+                                <p><strong>Name:</strong> ${user.name}</p>
+                                <p><strong>Email:</strong> ${user.email}</p>
+                                <div style="text-align: center; margin: 30px 0;">
+                                    <p>Please log in to the Owner (Super Admin) Dashboard to approve or decline this request.</p>
+                                </div>
+                                <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+                                <p style="font-size: 12px; color: #888;">This is an automated notification from Sweet Delights System.</p>
+                            </div>
+                        </div>
+                    `;
+                    await sendEmail({
+                        email: superadminEmail,
+                        subject: 'Sweet Delights - New Admin Approval Required',
+                        message: message
+                    });
+                } catch (emailError) {
+                    console.error('Failed to send notification email to superadmin:', emailError);
+                }
+            }
+
             res.status(201).json({
                 _id: user.id,
                 name: user.name,
                 email: user.email,
                 role: user.role,
+                status: user.status,
                 token: generateToken(user._id)
             });
         } else {
@@ -67,9 +107,20 @@ const loginUser = async (req, res) => {
         const user = await User.findOne({ email });
 
         if (user && (await user.matchPassword(password))) {
+            // Check status for admins
+            if (user.role === 'admin') {
+                if (user.status === 'pending') {
+                    return res.status(403).json({ message: 'Your account is pending approval by the Owner.' });
+                }
+                if (user.status === 'declined') {
+                    return res.status(403).json({ message: 'Your admin request was declined. Please contact the Owner.' });
+                }
+            }
+
             // Auto-promote if matches email but role is wrong (migration)
             if (user.email === 'nawaladitya06@gmail.com' && user.role !== 'superadmin') {
                 user.role = 'superadmin';
+                user.status = 'active';
                 await user.save();
             }
 
@@ -78,6 +129,7 @@ const loginUser = async (req, res) => {
                 name: user.name,
                 email: user.email,
                 role: user.role,
+                status: user.status,
                 token: generateToken(user._id)
             });
         } else {
@@ -312,6 +364,36 @@ const resetPassword = async (req, res) => {
     }
 };
 
+// @desc    Update User Status (Approve/Decline Admin)
+// @route   PUT /api/auth/status/:id
+// @access  Private/SuperAdmin
+const updateUserStatus = async (req, res) => {
+    try {
+        const { status } = req.body;
+        if (!['approved', 'declined', 'active'].includes(status)) {
+            return res.status(400).json({ message: 'Invalid status' });
+        }
+
+        const user = await User.findById(req.params.id);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        user.status = status;
+        await user.save();
+
+        res.json({
+            _id: user._id,
+            name: user.name,
+            email: user.email,
+            role: user.role,
+            status: user.status
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 module.exports = {
     registerUser,
     loginUser,
@@ -319,5 +401,6 @@ module.exports = {
     googleLogin,
     updateUserProfile,
     forgotPassword,
-    resetPassword
+    resetPassword,
+    updateUserStatus
 };

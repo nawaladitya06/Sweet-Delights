@@ -19,6 +19,7 @@ const AdminDashboard = () => {
     const [activeTab, setActiveTab] = useState('dashboard');
     const [stats, setStats] = useState({ totalOrders: 0, totalRevenue: 0, totalUsers: 0, lowStockProducts: [] });
     const [isStatsLoading, setIsStatsLoading] = useState(true);
+    const [sidebarOpen, setSidebarOpen] = useState(false);
     const { theme, toggleTheme } = useTheme(); // Use Theme Context
 
     React.useEffect(() => {
@@ -139,17 +140,31 @@ const AdminDashboard = () => {
             <PageTitle title="Admin Dashboard" />
 
             {/* Sidebar */}
-            <AdminSidebar currentView={activeTab} setCurrentView={setActiveTab} />
+            <AdminSidebar
+                currentView={activeTab}
+                setCurrentView={setActiveTab}
+                isOpen={sidebarOpen}
+                setIsOpen={setSidebarOpen}
+            />
 
             {/* Main Content */}
-            <main className="flex-1 md:ml-64 p-8 transition-all duration-300">
+            <main className="flex-1 md:ml-64 p-4 md:p-8 transition-all duration-300">
                 {/* Top Bar */}
                 <header className="flex items-center justify-between mb-8">
-                    <div>
-                        <h1 className="text-3xl font-serif font-black text-primary dark:text-accent capitalize">
-                            {activeTab}
-                        </h1>
-                        <p className="text-text-muted mt-1">Manage your bakery operations</p>
+                    <div className="flex items-center gap-4">
+                        {/* Mobile Menu Toggle */}
+                        <button
+                            onClick={() => setSidebarOpen(true)}
+                            className="p-2 -ml-2 rounded-lg hover:bg-black/5 dark:hover:bg-white/10 transition-colors md:hidden"
+                        >
+                            <span className="material-symbols-outlined">menu</span>
+                        </button>
+                        <div>
+                            <h1 className="text-2xl md:text-3xl font-serif font-black text-primary dark:text-accent capitalize">
+                                {activeTab}
+                            </h1>
+                            <p className="hidden md:block text-text-muted mt-1">Manage your bakery operations</p>
+                        </div>
                     </div>
                     <div className="flex items-center gap-4">
                         <button

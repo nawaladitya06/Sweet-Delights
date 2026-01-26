@@ -53,8 +53,8 @@ const Welcome = () => {
                         <div className="w-16 h-16 mx-auto bg-yellow-500/10 rounded-full flex items-center justify-center mb-4 group-hover:bg-yellow-500 group-hover:text-white transition-colors">
                             <span className="material-symbols-outlined text-3xl text-yellow-600 group-hover:text-white">verified_user</span>
                         </div>
-                        <h3 className="text-xl font-bold font-display mb-2">Super Admin</h3>
-                        <p className="text-sm text-text-muted">Full system control and user management.</p>
+                        <h3 className="text-xl font-bold font-display mb-2">Owner</h3>
+                        <p className="text-sm text-text-muted">Full system control and business management.</p>
                     </motion.div>
 
                     {/* Admin Card */}
@@ -68,8 +68,8 @@ const Welcome = () => {
                         <div className="w-16 h-16 mx-auto bg-primary/10 rounded-full flex items-center justify-center mb-4 group-hover:bg-primary group-hover:text-white transition-colors">
                             <span className="material-symbols-outlined text-3xl text-primary group-hover:text-white">admin_panel_settings</span>
                         </div>
-                        <h3 className="text-xl font-bold font-display mb-2">Admin</h3>
-                        <p className="text-sm text-text-muted">Manage products and orders.</p>
+                        <h3 className="text-xl font-bold font-display mb-2">Baker</h3>
+                        <p className="text-sm text-text-muted">Manage products, recipes and orders.</p>
                     </motion.div>
 
                     {/* User Card */}

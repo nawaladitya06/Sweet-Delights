@@ -63,9 +63,13 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/sweetdeli
     .then(() => console.log('MongoDB Connected'))
     .catch(err => console.log(err));
 
-// Create uploads folder if not exists
-if (!fs.existsSync(path.join(__dirname, '/uploads'))) {
-    fs.mkdirSync(path.join(__dirname, '/uploads'));
+// Create uploads folder if not exists (Safe for serverless)
+try {
+    if (!fs.existsSync(path.join(__dirname, '/uploads'))) {
+        fs.mkdirSync(path.join(__dirname, '/uploads'), { recursive: true });
+    }
+} catch (err) {
+    console.warn('Warning: Could not create uploads directory. This is expected in most serverless environments.');
 }
 
 // Routes
@@ -92,30 +96,37 @@ app.use('/api/coupons', couponRoutes);
 // Serve static files from the 'uploads' directory
 app.use('/uploads', express.static(path.join(__dirname, '/uploads')));
 
-app.get('/api', (req, res) => {
-    res.send('Sweet Delights API is running at /api');
-});
-
-app.get('/', (req, res) => {
-    res.send('Sweet Delights API is running at /');
-});
-
-// Health check route
 app.get('/api/health', (req, res) => {
     res.json({
         status: 'healthy',
         timestamp: new Date().toISOString(),
-        env: process.env.NODE_ENV || 'development',
-        db: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
+        env: process.env.NODE_ENV || 'production',
+        db: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
+        path: req.path
+    });
+});
+
+// Explicitly handle root API route
+app.get('/api', (req, res) => {
+    res.json({ message: 'Sweet Delights API is running', version: '1.0.0' });
+});
+
+// Custom 404 for API routes to debug path issues
+app.use('/api/*', (req, res) => {
+    console.log(`404 at API: ${req.method} ${req.originalUrl}`);
+    res.status(404).json({
+        message: 'Endpoint not found in Sweet Delights API',
+        path: req.originalUrl,
+        method: req.method
     });
 });
 
 // Global Error Handler
 app.use((err, req, res, next) => {
-    console.error('Global Error:', err);
-    res.status(500).json({
-        message: err.message,
-        stack: process.env.NODE_ENV === 'production' ? null : err.stack
+    console.error('Global Error Handler:', err);
+    res.status(err.status || 500).json({
+        message: err.message || 'Internal Server Error',
+        stack: process.env.NODE_ENV === 'production' ? '🥞' : err.stack
     });
 });
 

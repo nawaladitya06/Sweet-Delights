@@ -17,9 +17,14 @@ if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
 }
 console.log(`Application starting in ${process.env.NODE_ENV || 'development'} mode`);
 
-// Standard Middleware
 app.use(cors());
 app.use(express.json());
+
+// Log all requests
+app.use((req, res, next) => {
+    console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+    next();
+});
 
 // Security Middleware
 const helmet = require('helmet');
@@ -83,26 +88,14 @@ const uploadRoutes = require('./routes/uploadRoutes'); // Added uploadRoutes
 const contactRoutes = require('./routes/contactRoutes');
 const couponRoutes = require('./routes/couponRoutes');
 
-app.use('/api/auth', authRoutes);
-app.use('/api/products', productRoutes);
-app.use('/api/orders', orderRoutes);
-app.use('/api/payment', paymentRoutes);
-app.use('/api/image', imageRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/upload', uploadRoutes); // Mounted uploadRoutes
-app.use('/api/contact', contactRoutes);
-app.use('/api/coupons', couponRoutes);
-
-// Serve static files from the 'uploads' directory
-app.use('/uploads', express.static(path.join(__dirname, '/uploads')));
-
 app.get('/api/health', (req, res) => {
     res.json({
         status: 'healthy',
         timestamp: new Date().toISOString(),
         env: process.env.NODE_ENV || 'production',
         db: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected',
-        path: req.path
+        url: req.url,
+        originalUrl: req.originalUrl
     });
 });
 
@@ -110,6 +103,39 @@ app.get('/api/health', (req, res) => {
 app.get('/api', (req, res) => {
     res.json({ message: 'Sweet Delights API is running', version: '1.0.0' });
 });
+
+// Debug endpoint
+app.get('/api/debug', (req, res) => {
+    res.json({
+        message: 'Sweet Delights Debug Express Alive',
+        url: req.url,
+        originalUrl: req.originalUrl,
+        method: req.method,
+        headers: req.headers,
+        node_env: process.env.NODE_ENV
+    });
+});
+
+// Mount routes both with /api and without in case Vercel strips the prefix
+app.use('/api/auth', authRoutes);
+app.use('/api/products', productRoutes);
+app.use('/api/orders', orderRoutes);
+app.use('/api/payment', paymentRoutes);
+app.use('/api/image', imageRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/upload', uploadRoutes);
+app.use('/api/contact', contactRoutes);
+app.use('/api/coupons', couponRoutes);
+
+app.use('/auth', authRoutes);
+app.use('/products', productRoutes);
+app.use('/orders', orderRoutes);
+app.use('/payment', paymentRoutes);
+app.use('/image', imageRoutes);
+app.use('/users', userRoutes);
+app.use('/upload', uploadRoutes);
+app.use('/contact', contactRoutes);
+app.use('/coupons', couponRoutes);
 
 // Custom 404 for API routes to debug path issues
 app.use('/api/*', (req, res) => {

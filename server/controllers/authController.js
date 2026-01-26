@@ -225,7 +225,11 @@ const forgotPassword = async (req, res) => {
 
         // Create reset url
         // In production, this should be the frontend URL
-        const resetUrl = `http://localhost:5173/resetpassword/${resetToken}`;
+        const protocol = req.protocol;
+        const host = req.get('host');
+        const resetUrl = process.env.NODE_ENV === 'production'
+            ? `${protocol}://${host}/resetpassword/${resetToken}`
+            : `http://localhost:5173/resetpassword/${resetToken}`;
 
         const message = `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 10px; overflow: hidden;">

@@ -15,6 +15,7 @@ if (process.env.NODE_ENV === 'production' && !process.env.JWT_SECRET) {
     console.error('CRITICAL: JWT_SECRET environment variable is missing in production!');
     // We don't exit here to allow Vercel to potentially show logs, but auth will fail safely.
 }
+console.log(`Application starting in ${process.env.NODE_ENV || 'development'} mode`);
 
 // Standard Middleware
 app.use(cors());
@@ -97,6 +98,16 @@ app.get('/api', (req, res) => {
 
 app.get('/', (req, res) => {
     res.send('Sweet Delights API is running at /');
+});
+
+// Health check route
+app.get('/api/health', (req, res) => {
+    res.json({
+        status: 'healthy',
+        timestamp: new Date().toISOString(),
+        env: process.env.NODE_ENV || 'development',
+        db: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
+    });
 });
 
 // Global Error Handler

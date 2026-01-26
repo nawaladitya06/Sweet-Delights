@@ -116,6 +116,16 @@ app.get('/api/debug', (req, res) => {
     });
 });
 
+// Email config test endpoint
+app.get('/api/test-email-config', (req, res) => {
+    res.json({
+        emailUsername: process.env.EMAIL_USERNAME || '❌ NOT SET',
+        emailPassword: process.env.EMAIL_PASSWORD ? '✅ SET (hidden for security)' : '❌ NOT SET',
+        nodeEnv: process.env.NODE_ENV,
+        message: 'Check if both email credentials show as SET'
+    });
+});
+
 // Mount routes both with /api and without in case Vercel strips the prefix
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);

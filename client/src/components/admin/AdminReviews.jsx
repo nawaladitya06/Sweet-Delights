@@ -3,6 +3,7 @@ import axios from 'axios';
 import { API_URL } from '../../config';
 import { toast } from 'react-hot-toast';
 import AuthContext from '../../context/AuthContext';
+import { sendWeb3FormsEmail } from '../../utils/sendWeb3FormsEmail';
 
 const AdminReviews = () => {
     const { user } = useContext(AuthContext);
@@ -83,6 +84,24 @@ const AdminReviews = () => {
                 { text: replyText },
                 config
             );
+
+            // Notify via Web3Forms (Client-side)
+            const review = reviews.find(r => r._id === replyingTo.reviewId);
+            if (review) {
+                await sendWeb3FormsEmail({
+                    subject: `New Reply to Review: ${review.productName}`,
+                    fromName: 'Sweet Delights Admin',
+                    fields: {
+                        product: review.productName,
+                        reviewer: review.name,
+                        review_rating: review.rating,
+                        review_comment: review.comment,
+                        admin_reply: replyText,
+                        date: new Date().toLocaleString()
+                    }
+                });
+            }
+
             toast.success('Reply posted successfully');
             setReplyingTo(null);
             setReplyText('');

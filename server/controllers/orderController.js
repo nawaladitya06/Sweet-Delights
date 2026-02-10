@@ -56,43 +56,9 @@ const addOrderItems = async (req, res) => {
 
         const createdOrder = await order.save();
 
-        // Send confirmation email
-        try {
-            const User = require('../models/User');
-            const user = await User.findById(req.user._id);
-            const sendEmail = require('../utils/sendEmail');
-
-            const emailContent = `
-                <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 10px; overflow: hidden;">
-                    <div style="background-color: #ff4d6d; padding: 20px; text-align: center;">
-                        <h1 style="color: white; margin: 0;">Sweet Delights</h1>
-                    </div>
-                    <div style="padding: 30px; color: #333;">
-                        <h2>Order Confirmed!</h2>
-                        <p>Hi ${user.name},</p>
-                        <p>Thank you for your order! We're getting your treats ready.</p>
-                        <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin: 20px 0;">
-                            <p style="margin: 0; font-weight: bold;">Order ID: ${createdOrder._id}</p>
-                            <p style="margin: 5px 0 0 0;">Total Amount: ₹${createdOrder.totalPrice}</p>
-                            <p style="margin: 5px 0 0 0;">Payment Method: ${createdOrder.paymentMethod}</p>
-                        </div>
-                        <h3>Delivery Address:</h3>
-                        <p>${shippingAddress.street}, ${shippingAddress.city}, ${shippingAddress.postalCode}</p>
-                        <p>Expected Delivery: 2-4 hours</p>
-                        <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
-                        <p style="text-align: center; color: #888;">Visit your profile to track your order.</p>
-                    </div>
-                </div>
-            `;
-
-            await sendEmail({
-                email: user.email,
-                subject: 'Your Sweet Delights Order - Confirmed!',
-                message: emailContent
-            });
-        } catch (emailError) {
-            console.error('Order confirmation email failed:', emailError);
-        }
+        // Note: Order confirmation email is now handled client-side via Web3Forms
+        // to avoid Cloudflare 403 blocks on server-side requests.
+        console.log('Order created: Notification handled client-side.');
 
         res.status(201).json(createdOrder);
     }

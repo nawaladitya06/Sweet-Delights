@@ -49,35 +49,9 @@ const registerUser = async (req, res) => {
         if (user) {
             // If new user is admin, notify superadmin
             if (user.role === 'admin') {
-                try {
-                    const sendEmail = require('../utils/sendEmail');
-                    const superadminEmail = 'nawaladitya06@gmail.com';
-                    const message = `
-                        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e0e0e0; border-radius: 10px; overflow: hidden;">
-                            <div style="background-color: #ff4d6d; padding: 20px; text-align: center;">
-                                <h1 style="color: white; margin: 0;">Sweet Delights</h1>
-                            </div>
-                            <div style="padding: 30px; color: #333;">
-                                <h2>New Admin Request</h2>
-                                <p>A new user has registered as an Admin (Baker) and is waiting for your approval.</p>
-                                <p><strong>Name:</strong> ${user.name}</p>
-                                <p><strong>Email:</strong> ${user.email}</p>
-                                <div style="text-align: center; margin: 30px 0;">
-                                    <p>Please log in to the Owner (Super Admin) Dashboard to approve or decline this request.</p>
-                                </div>
-                                <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
-                                <p style="font-size: 12px; color: #888;">This is an automated notification from Sweet Delights System.</p>
-                            </div>
-                        </div>
-                    `;
-                    await sendEmail({
-                        email: superadminEmail,
-                        subject: 'Sweet Delights - New Admin Approval Required',
-                        message: message
-                    });
-                } catch (emailError) {
-                    console.error('Failed to send notification email to superadmin:', emailError);
-                }
+                // Note: Notification is now handled client-side via Web3Forms
+                // to avoid Cloudflare 403 blocks on server-side requests.
+                console.log('New Baker registered: Server-side note.');
             }
 
             res.status(201).json({

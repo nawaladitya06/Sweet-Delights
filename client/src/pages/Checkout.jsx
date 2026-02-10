@@ -8,6 +8,7 @@ import Footer from '../components/Footer';
 import CartContext from '../context/CartContext';
 import AuthContext from '../context/AuthContext';
 import RazorpayButton from '../components/RazorpayButton';
+import { sendWeb3FormsEmail } from '../utils/sendWeb3FormsEmail';
 
 const Checkout = () => {
     const { cartItems, getCartTotal, clearCart } = useContext(CartContext);
@@ -97,6 +98,22 @@ const Checkout = () => {
     const handleCODOrder = async () => {
         try {
             await createOrder('COD');
+
+            // Notify Admin via Web3Forms (Client-side)
+            await sendWeb3FormsEmail({
+                subject: `New COD Order - Sweet Delights`,
+                fromName: 'Sweet Delights Checkout',
+                fields: {
+                    order_type: 'Cash on Delivery',
+                    customer_name: `${formData.firstName} ${formData.lastName}`,
+                    customer_email: formData.email,
+                    total_amount: `₹${total}`,
+                    items: cartItems.map(i => `${i.name} (x${i.quantity})`).join(', '),
+                    address: `${formData.address}, ${formData.city}, ${formData.state} - ${formData.zipCode}`,
+                    date: new Date().toLocaleString()
+                }
+            });
+
             clearCart();
             toast.success('Order placed successfully! Cash on Delivery selected.', { icon: '🎉' });
             navigate('/');
@@ -118,6 +135,21 @@ const Checkout = () => {
                 razorpay_signature: paymentResponse.razorpay_signature,
                 order_id: createdOrder._id
             }, config);
+
+            // Notify Admin via Web3Forms (Client-side)
+            await sendWeb3FormsEmail({
+                subject: `New Paid Order - Sweet Delights`,
+                fromName: 'Sweet Delights Checkout',
+                fields: {
+                    order_type: 'Online Payment (Razorpay)',
+                    customer_name: `${formData.firstName} ${formData.lastName}`,
+                    customer_email: formData.email,
+                    total_amount: `₹${total}`,
+                    items: cartItems.map(i => `${i.name} (x${i.quantity})`).join(', '),
+                    razorpay_payment_id: paymentResponse.razorpay_payment_id,
+                    date: new Date().toLocaleString()
+                }
+            });
 
             clearCart();
             toast.success('Payment successful! Your sweet order is renewed.', { icon: '🎉' });

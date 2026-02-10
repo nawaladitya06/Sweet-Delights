@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import AuthContext from '../../context/AuthContext';
 import { API_URL } from '../../config';
+import { sendWeb3FormsEmail } from '../../utils/sendWeb3FormsEmail';
 
 const AdminMessages = () => {
     const [messages, setMessages] = useState([]);
@@ -51,6 +52,22 @@ const AdminMessages = () => {
             };
 
             await axios.post(`${API_URL}/api/contact/${id}/reply`, { replyMessage: replyText }, config);
+
+            // Notify user via Web3Forms (Client-side)
+            const msg = messages.find(m => m._id === id);
+            if (msg) {
+                await sendWeb3FormsEmail({
+                    subject: `Re: ${msg.inquiryType} - Sweet Delights`,
+                    fromName: 'Sweet Delights Admin',
+                    fields: {
+                        to_email: msg.email, // This helps you see who it was for in your inbox
+                        customer_name: msg.name,
+                        original_message: msg.message,
+                        admin_reply: replyText,
+                        reply_date: new Date().toLocaleString()
+                    }
+                });
+            }
 
             toast.success('Reply sent successfully!', { id: toastId });
             setReplyingTo(null);

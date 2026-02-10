@@ -200,26 +200,9 @@ const replyToProductReview = async (req, res) => {
             // Notify user via email
             const user = await User.findById(review.user);
             if (user && user.email) {
-                try {
-                    const message = `
-                        <h1>Hello ${user.name},</h1>
-                        <p>An admin has replied to your review on <strong>${product.name}</strong>.</p>
-                        <blockquote style="border-left: 4px solid #ccc; padding-left: 10px; color: #555;">
-                            ${text}
-                        </blockquote>
-                        <p>You can view the reply by visiting the product page.</p>
-                        <p>Regards,<br>Sweet Delights Team</p>
-                    `;
-
-                    await sendEmail({
-                        email: user.email,
-                        subject: 'New Reply to Your Review - Sweet Delights',
-                        message
-                    });
-                } catch (emailError) {
-                    console.error('Failed to send email notification:', emailError);
-                    // Continue without failing the request
-                }
+                // Note: User notification is now handled client-side or omitted if Web3Forms only supports owner delivery.
+                // Keeping this as a note to avoid crashing the server.
+                console.log(`Review reply added. Notification for ${user.email} should be handled client-side.`);
             }
 
             res.json({ message: 'Reply added successfully' });

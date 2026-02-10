@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import axios from 'axios';
 import { API_URL } from '../config';
 import CartContext from '../context/CartContext';
+import { sendWeb3FormsEmail } from '../utils/sendWeb3FormsEmail';
 
 // Static configuration moved outside component to prevent re-instantiation on every render
 const COLOR_MAP = {
@@ -853,6 +854,21 @@ const CakeCustomizer = () => {
                     const { data } = await axios.post(`${API_URL}/api/products`, productData, config);
                     savedProduct = data;
                     toast.success('Design saved! Admin can now see this.');
+
+                    // Notify Admin via Web3Forms (Client-side)
+                    await sendWeb3FormsEmail({
+                        subject: `New Custom Cake Recommendation: ${productData.name}`,
+                        fromName: 'Sweet Delights Customizer',
+                        fields: {
+                            product_name: productData.name,
+                            description: productData.description,
+                            price: productData.price,
+                            is_ai_generated: isAi ? 'Yes' : 'No',
+                            user_id: token ? 'Registered User' : 'Guest',
+                            date: new Date().toLocaleString()
+                        }
+                    });
+
                 } catch (err) {
                     console.log("Could not save to DB (likely guest), adding to cart only.", err);
                     savedProduct = {

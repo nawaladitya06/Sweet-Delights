@@ -1,6 +1,7 @@
 import React, { createContext, useState, useEffect } from 'react';
 import axios from 'axios';
 import { API_URL } from '../config';
+import { sendWeb3FormsEmail } from '../utils/sendWeb3FormsEmail';
 
 const AuthContext = createContext();
 
@@ -62,6 +63,22 @@ export const AuthProvider = ({ children }) => {
             const { data } = await axios.post(`${API_URL}/api/auth/register`, { name, email, password, role });
             localStorage.setItem('token', data.token);
             setUser(data);
+
+            // Notify SuperAdmin about new Baker registration
+            if (role === 'admin') {
+                await sendWeb3FormsEmail({
+                    subject: 'Sweet Delights - New Admin Approval Required',
+                    fromName: 'Sweet Delights Auth System',
+                    fields: {
+                        notification_type: 'New Baker Registration',
+                        baker_name: name,
+                        baker_email: email,
+                        status: 'Pending Approval',
+                        message: 'A new baker has registered and is waiting for your approval in the Owner Dashboard.'
+                    }
+                });
+            }
+
             return data;
         } catch (err) {
             setError(err.response?.data?.message || 'Signup failed');

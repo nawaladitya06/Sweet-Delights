@@ -1,4 +1,4 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import axios from 'axios';
 import { API_URL } from '../config';
 import toast from 'react-hot-toast';
@@ -18,6 +18,19 @@ const Contact = () => {
         inquiryType: 'General Inquiry',
         message: ''
     });
+    const [recentInquiries, setRecentInquiries] = useState([]);
+
+    useEffect(() => {
+        const fetchInquiries = async () => {
+            try {
+                const { data } = await axios.get(`${API_URL}/api/contact/public`);
+                setRecentInquiries(data);
+            } catch (error) {
+                console.error('Failed to fetch inquiries:', error);
+            }
+        };
+        fetchInquiries();
+    }, []);
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -35,9 +48,46 @@ const Contact = () => {
                 }
             };
 
-            await axios.post(`${API_URL}/api/contact`, formData, config);
+            // Save to backend DB + Send Web3Forms email notification in parallel
+            const [backendRes, web3Res] = await Promise.allSettled([
+                // 1. Save to database via backend
+                axios.post(`${API_URL}/api/contact`, formData, config),
+                // 2. Send email notification via Web3Forms (directly from browser)
+                fetch('https://api.web3forms.com/submit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify({
+                        access_key: import.meta.env.VITE_WEB3FORMS_ACCESS_KEY,
+                        subject: `New Inquiry from ${formData.name} - ${formData.inquiryType}`,
+                        from_name: 'Sweet Delights Contact Form',
+                        name: formData.name,
+                        email: formData.email,
+                        inquiry_type: formData.inquiryType,
+                        message: formData.message
+                    })
+                }).then(r => r.json())
+            ]);
+
+            // Check if backend save succeeded
+            if (backendRes.status === 'rejected') {
+                throw backendRes.reason;
+            }
+
+            // Log Web3Forms result (don't fail the whole submit if email has issues)
+            if (web3Res.status === 'fulfilled' && web3Res.value?.success) {
+                console.log('✅ Web3Forms email notification sent!');
+            } else {
+                console.warn('⚠️ Web3Forms notification may have failed:', web3Res);
+            }
+
             toast.success("Message sent! We'll get back to you shortly.", { id: toastId, icon: '💌' });
             setFormData({ name: '', email: '', inquiryType: 'General Inquiry', message: '' });
+
+            // Refresh the inquiries list
+            try {
+                const { data } = await axios.get(`${API_URL}/api/contact/public`);
+                setRecentInquiries(data);
+            } catch (err) { /* ignore */ }
 
             if (user) {
                 navigate('/home');
@@ -48,6 +98,27 @@ const Contact = () => {
             console.error(error);
             toast.error("Failed to send message. Please try again.", { id: toastId });
         }
+    };
+
+    const getInquiryColor = (type) => {
+        switch (type) {
+            case 'Custom Order': return 'bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400';
+            case 'Corporate Order': return 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400';
+            case 'Feedback': return 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400';
+            default: return 'bg-gray-100 text-gray-600 dark:bg-gray-800/50 dark:text-gray-400';
+        }
+    };
+
+    const getTimeAgo = (date) => {
+        const seconds = Math.floor((new Date() - new Date(date)) / 1000);
+        if (seconds < 60) return 'Just now';
+        const minutes = Math.floor(seconds / 60);
+        if (minutes < 60) return `${minutes}m ago`;
+        const hours = Math.floor(minutes / 60);
+        if (hours < 24) return `${hours}h ago`;
+        const days = Math.floor(hours / 24);
+        if (days < 7) return `${days}d ago`;
+        return new Date(date).toLocaleDateString();
     };
 
     return (
@@ -272,9 +343,59 @@ const Contact = () => {
                     </motion.div>
 
                 </div>
-            </main >
+
+                {/* Recent Inquiries Section */}
+                {recentInquiries.length > 0 && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 30 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        className="mt-20"
+                    >
+                        <div className="text-center mb-10">
+                            <h2 className="font-display text-3xl md:text-4xl font-bold mb-3">
+                                Recent <span className="text-accent">Inquiries</span>
+                            </h2>
+                            <p className="text-text-muted max-w-xl mx-auto">
+                                See what others are asking about. Join our growing community of sweet lovers!
+                            </p>
+                        </div>
+
+                        <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                            {recentInquiries.map((inquiry, index) => (
+                                <motion.div
+                                    key={inquiry._id}
+                                    initial={{ opacity: 0, y: 15 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    viewport={{ once: true }}
+                                    transition={{ delay: index * 0.05 }}
+                                    className="bg-surface-light dark:bg-surface-dark p-5 rounded-2xl border border-accent/10 hover:border-accent/30 hover:-translate-y-1 transition-all duration-300 shadow-sm hover:shadow-md"
+                                >
+                                    <div className="flex items-center gap-3 mb-3">
+                                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-accent/80 to-accent flex items-center justify-center text-white font-bold text-sm uppercase shadow-sm">
+                                            {inquiry.name.charAt(0)}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="font-bold text-sm truncate text-text-primary-light dark:text-text-primary-dark">
+                                                {inquiry.name}
+                                            </p>
+                                            <p className="text-xs text-text-muted">
+                                                {getTimeAgo(inquiry.createdAt)}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold ${getInquiryColor(inquiry.inquiryType)}`}>
+                                        {inquiry.inquiryType}
+                                    </span>
+                                </motion.div>
+                            ))}
+                        </div>
+                    </motion.div>
+                )}
+
+            </main>
             <Footer />
-        </div >
+        </div>
     );
 };
 

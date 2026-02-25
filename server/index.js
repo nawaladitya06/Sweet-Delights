@@ -87,6 +87,9 @@ const userRoutes = require('./routes/userRoutes');
 const uploadRoutes = require('./routes/uploadRoutes'); // Added uploadRoutes
 const contactRoutes = require('./routes/contactRoutes');
 const couponRoutes = require('./routes/couponRoutes');
+const reportRoutes = require('./routes/reportRoutes');
+const { generateReport } = require('./utils/reportGenerator');
+const cron = require('node-cron');
 
 app.get('/api/health', (req, res) => {
     res.json({
@@ -128,6 +131,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/coupons', couponRoutes);
+app.use('/api/reports', reportRoutes);
 
 app.use('/auth', authRoutes);
 app.use('/products', productRoutes);
@@ -138,6 +142,23 @@ app.use('/users', userRoutes);
 app.use('/upload', uploadRoutes);
 app.use('/contact', contactRoutes);
 app.use('/coupons', couponRoutes);
+app.use('/reports', reportRoutes);
+
+// Automated Report Generation (Node-cron)
+// Monthly report: 1st of every month at midnight
+cron.schedule('0 0 1 * *', async () => {
+    console.log('Running Monthly Report Generation Cron Job');
+    const lastMonth = new Date();
+    lastMonth.setMonth(lastMonth.getMonth() - 1);
+    await generateReport('monthly', lastMonth.getMonth(), lastMonth.getFullYear());
+});
+
+// Annual report: January 1st at midnight
+cron.schedule('0 0 1 1 *', async () => {
+    console.log('Running Annual Report Generation Cron Job');
+    const lastYear = new Date().getFullYear() - 1;
+    await generateReport('annual', 11, lastYear);
+});
 
 // Custom 404 for API routes to debug path issues
 app.use('/api', (req, res) => {

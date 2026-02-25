@@ -10,6 +10,7 @@ import AdminCoupons from '../components/admin/AdminCoupons';
 import AdminUsers from '../components/admin/AdminUsers';
 import AdminProducts from '../components/admin/AdminProducts';
 import AdminSettings from '../components/admin/AdminSettings';
+import AdminReports from '../components/admin/AdminReports';
 import PageTitle from '../components/PageTitle';
 import { useTheme } from '../context/ThemeContext'; // Import Theme Hook
 import { DashboardStatsSkeleton } from '../components/Skeleton';
@@ -128,8 +129,9 @@ const AdminDashboard = () => {
                 return <AdminMessages />;
             case 'coupons':
                 return <AdminCoupons />;
+            case 'reports':
+                return <AdminReports />;
             case 'settings':
-                return <div className="p-8 glass rounded-2xl">Settings Module (Under Construction)</div>;
             default:
                 return null;
         }

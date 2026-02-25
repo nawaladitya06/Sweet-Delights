@@ -19,6 +19,7 @@ const AdminSidebar = ({ currentView, setCurrentView, isOpen, setIsOpen }) => {
         { id: 'reviews', label: 'Reviews', icon: 'reviews' },
         { id: 'messages', label: 'Messages', icon: 'mail' },
         { id: 'coupons', label: 'Coupons', icon: 'sell' },
+        { id: 'reports', label: 'Reports', icon: 'assessment' },
         ...(user?.role === 'superadmin' ? [{ id: 'users', label: 'Users', icon: 'group' }] : []),
         { id: 'settings', label: 'Settings', icon: 'settings' },
     ];

@@ -41,9 +41,15 @@ const addOrderItems = async (req, res) => {
             await Coupon.findOneAndUpdate({ code: discountCode.toUpperCase() }, { $inc: { usedCount: 1 } });
         }
 
+        // Determine the target user for the order
+        let targetUserId = req.user._id;
+        if (req.body.user && (req.user.role === 'admin' || req.user.role === 'superadmin')) {
+            targetUserId = req.body.user;
+        }
+
         const order = new Order({
             orderItems,
-            user: req.user._id,
+            user: targetUserId,
             shippingAddress,
             paymentMethod,
             itemsPrice,
@@ -51,7 +57,10 @@ const addOrderItems = async (req, res) => {
             shippingPrice,
             totalPrice,
             discountAmount,
-            discountCode
+            discountCode,
+            isPaid: req.body.isPaid || false,
+            paidAt: req.body.isPaid ? Date.now() : null,
+            status: req.body.status || 'Pending'
         });
 
         const createdOrder = await order.save();

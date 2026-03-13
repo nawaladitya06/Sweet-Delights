@@ -77,8 +77,28 @@ const triggerManualReport = async (req, res) => {
     }
 };
 
+// @desc    Delete a specific report
+// @route   DELETE /api/reports/download/:filename
+// @access  Private/Admin
+const deleteReport = async (req, res) => {
+    try {
+        const { filename } = req.params;
+        const filePath = path.join(__dirname, '../uploads/reports', filename);
+
+        if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+            res.json({ message: 'Report deleted successfully' });
+        } else {
+            res.status(404).json({ message: 'Report not found' });
+        }
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
 module.exports = {
     getReports,
     downloadReport,
-    triggerManualReport
+    triggerManualReport,
+    deleteReport
 };

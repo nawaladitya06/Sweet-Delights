@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const { generateReport } = require('../utils/reportGenerator');
+const { generateExcelReport } = require('../utils/excelGenerator');
 
 // @desc    Get all available reports
 // @route   GET /api/reports
@@ -14,14 +15,16 @@ const getReports = async (req, res) => {
 
         const files = fs.readdirSync(reportsDir);
         const reports = files
-            .filter(file => file.endsWith('.pdf'))
+            .filter(file => file.endsWith('.pdf') || file.endsWith('.xlsx'))
             .map(file => {
                 const stats = fs.statSync(path.join(reportsDir, file));
+                const isMonthly = file.includes('monthly');
                 return {
                     name: file,
                     size: stats.size,
                     createdAt: stats.birthtime,
-                    type: file.includes('monthly') ? 'Monthly' : 'Annual'
+                    type: isMonthly ? 'Monthly' : 'Annual',
+                    format: file.endsWith('.pdf') ? 'PDF' : 'Excel'
                 };
             })
             .sort((a, b) => b.createdAt - a.createdAt);
@@ -55,13 +58,19 @@ const downloadReport = async (req, res) => {
 // @access  Private/Admin
 const triggerManualReport = async (req, res) => {
     try {
-        const { type, month, year } = req.body; // type: 'monthly' or 'annual'
+        const { type, month, year, format } = req.body; // type: 'monthly' or 'annual', format: 'pdf' or 'excel'
 
         const now = new Date();
         const targetYear = year || now.getFullYear();
         const targetMonth = month !== undefined ? month : now.getMonth();
 
-        const result = await generateReport(type, targetMonth, targetYear);
+        let result;
+        if (format === 'excel') {
+            result = await generateExcelReport(type, targetMonth, targetYear);
+        } else {
+            result = await generateReport(type, targetMonth, targetYear);
+        }
+        
         res.status(201).json({ message: 'Report generated successfully', ...result });
     } catch (error) {
         res.status(500).json({ message: error.message });

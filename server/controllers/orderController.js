@@ -152,6 +152,7 @@ const getDashboardStats = async (req, res) => {
         const orders = await Order.find({});
         const totalOrders = orders.length;
         const totalRevenue = orders.reduce((acc, item) => acc + item.totalPrice, 0);
+        const totalGST = orders.reduce((acc, item) => acc + item.taxPrice, 0);
 
         const User = require('../models/User');
         const totalUsers = await User.countDocuments({});
@@ -183,6 +184,7 @@ const getDashboardStats = async (req, res) => {
         res.json({
             totalOrders,
             totalRevenue: totalRevenue.toFixed(2),
+            totalGST: totalGST.toFixed(2),
             totalUsers,
             salesHistory: last7Days,
             lowStockProducts

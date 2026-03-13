@@ -25,8 +25,7 @@ const generateReport = async (type, month, year) => {
         }
 
         const orders = await Order.find({
-            createdAt: { $gte: startDate, $lte: endDate },
-            isPaid: true
+            createdAt: { $gte: startDate, $lte: endDate }
         }).populate('user', 'name email');
 
         const reportsDir = path.join(__dirname, '../uploads/reports');
@@ -34,7 +33,8 @@ const generateReport = async (type, month, year) => {
             fs.mkdirSync(reportsDir, { recursive: true });
         }
 
-        const fileName = `${type}_report_${year}_${type === 'monthly' ? month + 1 : ''}.pdf`;
+        const timestamp = Date.now();
+        const fileName = `${type}_report_${year}_${type === 'monthly' ? month + 1 : ''}_${timestamp}.pdf`;
         const filePath = path.join(reportsDir, fileName);
         const doc = new PDFDocument({ margin: 50 });
 
@@ -54,6 +54,7 @@ const generateReport = async (type, month, year) => {
 
         // Stats summary
         const totalRevenue = orders.reduce((acc, order) => acc + order.totalPrice, 0);
+        const totalGST = orders.reduce((acc, order) => acc + order.taxPrice, 0);
         const totalOrders = orders.length;
         const totalItems = orders.reduce((acc, order) => acc + order.orderItems.reduce((iAcc, item) => iAcc + item.qty, 0), 0);
 
@@ -61,6 +62,7 @@ const generateReport = async (type, month, year) => {
         doc.fillColor('#444444').fontSize(10);
         doc.text(`Total Orders: ${totalOrders}`);
         doc.text(`Total Revenue: ₹${totalRevenue.toFixed(2)}`);
+        doc.text(`Total GST (Tax): ₹${totalGST.toFixed(2)}`);
         doc.text(`Total Items Sold: ${totalItems}`);
         doc.moveDown();
 
@@ -69,8 +71,9 @@ const generateReport = async (type, month, year) => {
         doc.font('Helvetica-Bold');
         doc.text('Date', 50, tableTop);
         doc.text('Order ID', 120, tableTop);
-        doc.text('Customer', 250, tableTop);
-        doc.text('Amount', 450, tableTop, { align: 'right' });
+        doc.text('Customer', 220, tableTop);
+        doc.text('GST', 400, tableTop, { align: 'right' });
+        doc.text('Amount', 480, tableTop, { align: 'right' });
         doc.moveDown();
 
         doc.font('Helvetica');
@@ -84,8 +87,9 @@ const generateReport = async (type, month, year) => {
             }
             doc.text(new Date(order.createdAt).toLocaleDateString(), 50, currentY);
             doc.text(order._id.toString().substring(0, 10) + '...', 120, currentY);
-            doc.text(order.user ? order.user.name : 'Guest', 250, currentY);
-            doc.text(`₹${order.totalPrice.toFixed(2)}`, 450, currentY, { align: 'right' });
+            doc.text(order.user ? order.user.name : 'Guest', 220, currentY);
+            doc.text(`₹${order.taxPrice.toFixed(2)}`, 400, currentY, { align: 'right' });
+            doc.text(`₹${order.totalPrice.toFixed(2)}`, 480, currentY, { align: 'right' });
             currentY += 20;
         });
 

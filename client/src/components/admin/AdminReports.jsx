@@ -9,6 +9,9 @@ const AdminReports = () => {
     const [loading, setLoading] = useState(true);
     const [statsLoading, setStatsLoading] = useState(true);
     const [generating, setGenerating] = useState(false);
+    const [reportType, setReportType] = useState('monthly'); // 'monthly' or 'annual'
+    const [previewUrl, setPreviewUrl] = useState(null);
+    const [showPreview, setShowPreview] = useState(false);
 
     useEffect(() => {
         fetchReports();
@@ -68,6 +71,31 @@ const AdminReports = () => {
         }
     };
 
+    const handlePreview = async (filename) => {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await axios.get(
+                `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/reports/download/${filename}`,
+                {
+                    headers: { Authorization: `Bearer ${token}` },
+                    responseType: 'blob'
+                }
+            );
+
+            if (!filename.toLowerCase().endsWith('.pdf')) {
+                toast.error('Preview is only available for PDF reports');
+                return;
+            }
+
+            const file = new Blob([response.data], { type: 'application/pdf' });
+            const fileURL = URL.createObjectURL(file);
+            setPreviewUrl(fileURL);
+            setShowPreview(true);
+        } catch (error) {
+            toast.error('Failed to load preview');
+        }
+    };
+
     const handleDelete = async (filename) => {
         if (!window.confirm('Are you sure you want to delete this report?')) return;
         
@@ -110,48 +138,47 @@ const AdminReports = () => {
                     <h2 className="text-2xl font-serif font-black text-primary dark:text-accent">Financial Hub</h2>
                     <p className="text-sm text-text-muted">Real-time performance and archived reports</p>
                 </div>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2 items-center">
                     <button
                         onClick={() => { fetchReports(); fetchStats(); }}
-                        className="p-2 rounded-xl glass border border-accent/20 text-accent hover:bg-accent hover:text-white transition-all"
+                        className="p-2 rounded-xl glass border border-accent/20 text-accent hover:bg-accent hover:text-white transition-all mr-2"
                         title="Refresh Data"
                     >
                         <span className="material-symbols-outlined text-sm">refresh</span>
                     </button>
-                    <div className="flex gap-2 bg-accent/5 p-1 rounded-xl border border-accent/10">
+                    
+                    {/* Filter Toggle */}
+                    <div className="flex bg-accent/10 p-1 rounded-xl border border-accent/20 mr-2">
                         <button
-                            onClick={() => triggerManualReport('monthly', 'pdf')}
-                            disabled={generating}
-                            className="px-3 py-1.5 rounded-lg bg-white dark:bg-black/20 text-xs font-bold shadow-sm hover:shadow-md transition-all disabled:opacity-50 flex items-center gap-1.5"
+                            onClick={() => setReportType('monthly')}
+                            className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${reportType === 'monthly' ? 'bg-accent text-white shadow-md' : 'text-accent hover:bg-accent/5'}`}
                         >
-                            <span className="material-symbols-outlined text-[16px] text-error">picture_as_pdf</span>
                             Monthly
                         </button>
                         <button
-                            onClick={() => triggerManualReport('monthly', 'excel')}
-                            disabled={generating}
-                            className="px-3 py-1.5 rounded-lg bg-white dark:bg-black/20 text-xs font-bold shadow-sm hover:shadow-md transition-all disabled:opacity-50 flex items-center gap-1.5"
+                            onClick={() => setReportType('annual')}
+                            className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${reportType === 'annual' ? 'bg-accent text-white shadow-md' : 'text-accent hover:bg-accent/5'}`}
                         >
-                            <span className="material-symbols-outlined text-[16px] text-success">table_view</span>
-                            Monthly
+                            Annual
                         </button>
                     </div>
+
                     <div className="flex gap-2 bg-primary/5 p-1 rounded-xl border border-primary/10">
                         <button
-                            onClick={() => triggerManualReport('annual', 'pdf')}
+                            onClick={() => triggerManualReport(reportType, 'pdf')}
                             disabled={generating}
-                            className="px-3 py-1.5 rounded-lg bg-white dark:bg-black/20 text-xs font-bold shadow-sm hover:shadow-md transition-all disabled:opacity-50 flex items-center gap-1.5"
+                            className="px-4 py-1.5 rounded-lg bg-white dark:bg-black/20 text-xs font-bold shadow-sm hover:shadow-md transition-all disabled:opacity-50 flex items-center gap-1.5 text-error"
                         >
-                            <span className="material-symbols-outlined text-[16px] text-error">picture_as_pdf</span>
-                            Annual
+                            <span className="material-symbols-outlined text-[16px]">picture_as_pdf</span>
+                            PDF
                         </button>
                         <button
-                            onClick={() => triggerManualReport('annual', 'excel')}
+                            onClick={() => triggerManualReport(reportType, 'excel')}
                             disabled={generating}
-                            className="px-3 py-1.5 rounded-lg bg-white dark:bg-black/20 text-xs font-bold shadow-sm hover:shadow-md transition-all disabled:opacity-50 flex items-center gap-1.5"
+                            className="px-4 py-1.5 rounded-lg bg-white dark:bg-black/20 text-xs font-bold shadow-sm hover:shadow-md transition-all disabled:opacity-50 flex items-center gap-1.5 text-success"
                         >
-                            <span className="material-symbols-outlined text-[16px] text-success">table_view</span>
-                            Annual
+                            <span className="material-symbols-outlined text-[16px]">table_view</span>
+                            Excel
                         </button>
                     </div>
                 </div>
@@ -197,17 +224,10 @@ const AdminReports = () => {
                 </div>
 
                 <div className="glass p-6 rounded-2xl border border-accent/10 hover:shadow-lg transition-all group bg-accent text-white flex flex-col justify-center items-center text-center cursor-pointer"
-                    onClick={() => triggerManualReport('monthly', 'pdf')}
+                    onClick={() => triggerManualReport(reportType, 'pdf')}
                 >
                     <span className="material-symbols-outlined text-3xl mb-1">picture_as_pdf</span>
-                    <p className="text-xs font-bold uppercase">Generate New PDF</p>
-                </div>
-
-                <div className="glass p-6 rounded-2xl border border-success/10 hover:shadow-lg transition-all group bg-success text-white flex flex-col justify-center items-center text-center cursor-pointer"
-                    onClick={() => triggerManualReport('monthly', 'excel')}
-                >
-                    <span className="material-symbols-outlined text-3xl mb-1">table_view</span>
-                    <p className="text-xs font-bold uppercase">Generate New Excel</p>
+                    <p className="text-xs font-bold uppercase">Update {reportType === 'monthly' ? 'Monthly' : 'Annual'} PDF</p>
                 </div>
             </div>
 
@@ -255,6 +275,15 @@ const AdminReports = () => {
                                 {new Date(report.createdAt).toLocaleString()} • {(report.size / 1024).toFixed(0)} KB
                             </p>
                             <div className="flex gap-2">
+                                {report.format === 'PDF' && (
+                                    <button
+                                        onClick={() => handlePreview(report.name)}
+                                        className="p-2 rounded-xl bg-accent/10 text-accent hover:bg-accent hover:text-white transition-all"
+                                        title="Preview"
+                                    >
+                                        <span className="material-symbols-outlined text-sm">visibility</span>
+                                    </button>
+                                )}
                                 <button
                                     onClick={() => handleDownload(report.name)}
                                     className={`flex-1 btn flex items-center justify-center gap-2 text-xs py-2 ${report.format === 'PDF' ? 'btn-accent' : 'bg-success hover:bg-success-dark text-white'}`}
@@ -265,7 +294,7 @@ const AdminReports = () => {
                                 <button
                                     onClick={() => handleDelete(report.name)}
                                     className="p-2 rounded-xl bg-error/10 text-error hover:bg-error hover:text-white transition-all"
-                                    title="Delete Report"
+                                    title="Delete"
                                 >
                                     <span className="material-symbols-outlined text-sm">delete</span>
                                 </button>
@@ -274,6 +303,55 @@ const AdminReports = () => {
                     ))}
                     </div>
                 </>
+            )}
+
+            {/* Preview Modal Overlay */}
+            {showPreview && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8 animate-in fade-in duration-300">
+                    <div className="absolute inset-0 bg-black/70 backdrop-blur-md" onClick={() => setShowPreview(false)}></div>
+                    <div className="glass w-full max-w-6xl h-[90vh] rounded-[2.5rem] overflow-hidden border border-white/20 shadow-[0_0_50px_rgba(0,0,0,0.5)] relative flex flex-col animate-in zoom-in-95 duration-500">
+                        <div className="p-6 border-b border-white/10 flex justify-between items-center bg-white/5 backdrop-blur-xl">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-accent/20 rounded-xl">
+                                    <span className="material-symbols-outlined text-accent">visibility</span>
+                                </div>
+                                <div>
+                                    <h3 className="font-serif font-black text-white text-lg">Report Preview</h3>
+                                    <p className="text-[10px] text-white/50 uppercase font-bold tracking-widest">Confidential Financial Data</p>
+                                </div>
+                            </div>
+                            <button 
+                                onClick={() => setShowPreview(false)}
+                                className="p-2.5 rounded-2xl bg-white/5 hover:bg-error/20 hover:text-error text-white/70 transition-all group"
+                            >
+                                <span className="material-symbols-outlined group-hover:rotate-90 transition-transform">close</span>
+                            </button>
+                        </div>
+                        <div className="flex-1 bg-[#2b2b2b] relative">
+                            <iframe 
+                                src={`${previewUrl}#toolbar=0`} 
+                                className="w-full h-full border-none"
+                                title="Report Preview"
+                            ></iframe>
+                        </div>
+                        <div className="p-6 border-t border-white/10 flex justify-end gap-3 bg-white/5 backdrop-blur-xl">
+                            <button 
+                                onClick={() => setShowPreview(false)}
+                                className="px-8 py-3 rounded-2xl border border-white/10 text-white/70 text-xs font-black uppercase hover:bg-white/10 transition-all"
+                            >
+                                Close Preview
+                            </button>
+                            <a 
+                                href={previewUrl} 
+                                download="report_preview.pdf"
+                                className="px-8 py-3 rounded-2xl bg-accent text-white text-xs font-black uppercase hover:bg-accent-dark transition-all shadow-[0_0_20px_rgba(183,161,121,0.3)] flex items-center gap-2"
+                            >
+                                <span className="material-symbols-outlined text-sm">download</span>
+                                Download File
+                            </a>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );

@@ -64,6 +64,23 @@ const triggerManualReport = async (req, res) => {
         const targetYear = year || now.getFullYear();
         const targetMonth = month !== undefined ? month : now.getMonth();
 
+        // Auto-Cleanup: Delete previous versions of the same report type/period/format
+        const reportsDir = path.join(__dirname, '../uploads/reports');
+        if (fs.existsSync(reportsDir)) {
+            const prefix = `${type}_report_${targetYear}_${type === 'monthly' ? targetMonth + 1 : ''}_`;
+            const files = fs.readdirSync(reportsDir);
+            files.forEach(file => {
+                if (file.startsWith(prefix) && file.endsWith(format === 'excel' ? '.xlsx' : '.pdf')) {
+                    try {
+                        fs.unlinkSync(path.join(reportsDir, file));
+                        console.log(`Auto-cleaned old report: ${file}`);
+                    } catch (err) {
+                        console.error(`Failed to auto-clean ${file}:`, err);
+                    }
+                }
+            });
+        }
+
         let result;
         if (format === 'excel') {
             result = await generateExcelReport(type, targetMonth, targetYear);
@@ -83,15 +100,26 @@ const triggerManualReport = async (req, res) => {
 const deleteReport = async (req, res) => {
     try {
         const { filename } = req.params;
-        const filePath = path.join(__dirname, '../uploads/reports', filename);
+        const reportsDir = path.join(__dirname, '../uploads/reports');
+        const filePath = path.join(reportsDir, filename);
+
+        console.log(`Deletion requested for: ${filename}`);
+        console.log(`Absolute path: ${filePath}`);
 
         if (fs.existsSync(filePath)) {
             fs.unlinkSync(filePath);
+            console.log(`Successfully deleted: ${filename}`);
             res.json({ message: 'Report deleted successfully' });
         } else {
+            console.warn(`File not found for deletion: ${filePath}`);
+            // Check if it's a directory issue
+            if (!fs.existsSync(reportsDir)) {
+                console.error(`Reports directory missing: ${reportsDir}`);
+            }
             res.status(404).json({ message: 'Report not found' });
         }
     } catch (error) {
+        console.error(`Error during deletion of ${req.params.filename}:`, error);
         res.status(500).json({ message: error.message });
     }
 };

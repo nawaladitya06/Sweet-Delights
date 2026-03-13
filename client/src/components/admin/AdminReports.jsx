@@ -199,8 +199,15 @@ const AdminReports = () => {
                 <div className="glass p-6 rounded-2xl border border-accent/10 hover:shadow-lg transition-all group bg-accent text-white flex flex-col justify-center items-center text-center cursor-pointer"
                     onClick={() => triggerManualReport('monthly', 'pdf')}
                 >
-                    <span className="material-symbols-outlined text-3xl mb-1">auto_awesome</span>
+                    <span className="material-symbols-outlined text-3xl mb-1">picture_as_pdf</span>
                     <p className="text-xs font-bold uppercase">Generate New PDF</p>
+                </div>
+
+                <div className="glass p-6 rounded-2xl border border-success/10 hover:shadow-lg transition-all group bg-success text-white flex flex-col justify-center items-center text-center cursor-pointer"
+                    onClick={() => triggerManualReport('monthly', 'excel')}
+                >
+                    <span className="material-symbols-outlined text-3xl mb-1">table_view</span>
+                    <p className="text-xs font-bold uppercase">Generate New Excel</p>
                 </div>
             </div>
 

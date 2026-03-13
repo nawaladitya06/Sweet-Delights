@@ -144,6 +144,7 @@ app.use('/contact', contactRoutes);
 app.use('/coupons', couponRoutes);
 app.use('/reports', reportRoutes);
 
+/* 
 // Automated Report Generation (Node-cron)
 // Monthly report: 1st of every month at midnight
 cron.schedule('0 0 1 * *', async () => {
@@ -159,6 +160,7 @@ cron.schedule('0 0 1 1 *', async () => {
     const lastYear = new Date().getFullYear() - 1;
     await generateReport('annual', 11, lastYear);
 });
+*/
 
 // Custom 404 for API routes to debug path issues
 app.use('/api', (req, res) => {

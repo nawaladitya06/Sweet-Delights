@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getReports, downloadReport, triggerManualReport } = require('../controllers/reportController');
+const { getReports, downloadReport, triggerManualReport, deleteReport } = require('../controllers/reportController');
 const { protect, admin } = require('../middleware/authMiddleware');
 
 router.route('/')
@@ -10,6 +10,7 @@ router.route('/generate')
     .post(protect, admin, triggerManualReport);
 
 router.route('/download/:filename')
-    .get(protect, admin, downloadReport);
+    .get(protect, admin, downloadReport)
+    .delete(protect, admin, deleteReport);
 
 module.exports = router;

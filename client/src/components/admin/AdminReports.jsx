@@ -68,6 +68,22 @@ const AdminReports = () => {
         }
     };
 
+    const handleDelete = async (filename) => {
+        if (!window.confirm('Are you sure you want to delete this report?')) return;
+        
+        try {
+            const token = localStorage.getItem('token');
+            await axios.delete(
+                `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/reports/download/${filename}`,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            toast.success('Report deleted successfully');
+            fetchReports();
+        } catch (error) {
+            toast.error(error.response?.data?.message || 'Failed to delete report');
+        }
+    };
+
     const triggerManualReport = async (type, format = 'pdf') => {
         try {
             setGenerating(true);
@@ -231,13 +247,22 @@ const AdminReports = () => {
                             <p className="text-[10px] text-text-muted mb-4 font-bold">
                                 {new Date(report.createdAt).toLocaleString()} • {(report.size / 1024).toFixed(0)} KB
                             </p>
-                            <button
-                                onClick={() => handleDownload(report.name)}
-                                className={`w-full btn flex items-center justify-center gap-2 text-xs py-2 ${report.format === 'PDF' ? 'btn-accent' : 'bg-success hover:bg-success-dark text-white'}`}
-                            >
-                                <span className="material-symbols-outlined text-sm">download</span>
-                                Download {report.format}
-                            </button>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => handleDownload(report.name)}
+                                    className={`flex-1 btn flex items-center justify-center gap-2 text-xs py-2 ${report.format === 'PDF' ? 'btn-accent' : 'bg-success hover:bg-success-dark text-white'}`}
+                                >
+                                    <span className="material-symbols-outlined text-sm">download</span>
+                                    Download
+                                </button>
+                                <button
+                                    onClick={() => handleDelete(report.name)}
+                                    className="p-2 rounded-xl bg-error/10 text-error hover:bg-error hover:text-white transition-all"
+                                    title="Delete Report"
+                                >
+                                    <span className="material-symbols-outlined text-sm">delete</span>
+                                </button>
+                            </div>
                         </div>
                     ))}
                     </div>

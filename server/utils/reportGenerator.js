@@ -69,11 +69,11 @@ const generateReport = async (type, month, year) => {
         // Table Header
         const tableTop = doc.y;
         doc.font('Helvetica-Bold');
-        doc.text('Date', 50, tableTop);
-        doc.text('Order ID', 120, tableTop);
-        doc.text('Customer', 220, tableTop);
-        doc.text('GST', 400, tableTop, { align: 'right' });
-        doc.text('Amount', 480, tableTop, { align: 'right' });
+        doc.text('Date', 50, tableTop, { width: 60 });
+        doc.text('Order ID', 115, tableTop, { width: 100 });
+        doc.text('Customer', 220, tableTop, { width: 160 });
+        doc.text('Tax (GST)', 380, tableTop, { width: 80, align: 'right' });
+        doc.text('Total Amount', 470, tableTop, { width: 80, align: 'right' });
         doc.moveDown();
 
         doc.font('Helvetica');
@@ -85,11 +85,11 @@ const generateReport = async (type, month, year) => {
                 doc.addPage();
                 currentY = 50;
             }
-            doc.text(new Date(order.createdAt).toLocaleDateString(), 50, currentY);
-            doc.text(order._id.toString().substring(0, 10) + '...', 120, currentY);
-            doc.text(order.user ? order.user.name : 'Guest', 220, currentY);
-            doc.text(`₹${order.taxPrice.toFixed(2)}`, 400, currentY, { align: 'right' });
-            doc.text(`₹${order.totalPrice.toFixed(2)}`, 480, currentY, { align: 'right' });
+            doc.text(new Date(order.createdAt).toLocaleDateString(), 50, currentY, { width: 60 });
+            doc.text(order._id.toString().substring(0, 10) + '...', 115, currentY, { width: 100 });
+            doc.text(order.user ? order.user.name : 'Guest', 220, currentY, { width: 160 });
+            doc.text(`₹${order.taxPrice.toFixed(2)}`, 380, currentY, { width: 80, align: 'right' });
+            doc.text(`₹${order.totalPrice.toFixed(2)}`, 470, currentY, { width: 80, align: 'right' });
             currentY += 20;
         });
 
